@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Smoke Control</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9e9e9e;
+            --accent: #ffb74d;
+            --accent-hover: #ffa726;
+            --danger: #cf6679;
+            --border: #2c2c2c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .intervals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .stat-row span:last-child {
+            font-weight: 600;
+        }
+
+        .log-container {
+            max-height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: var(--bg-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .log-item-info {
+            color: var(--text-primary);
+        }
+
+        .add-btn-container {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+            background: linear-gradient(to top, var(--bg-color) 60%, transparent);
+            z-index: 50;
+        }
+
+        body {
+            padding-bottom: 90px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background-color: var(--accent);
+            color: #121212;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 360px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .packs-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .pack-num-btn {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 14px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .pack-num-btn.selected {
+            background-color: var(--accent);
+            color: #121212;
+            border-color: var(--accent);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-approve {
+            flex: 2;
+            background-color: var(--accent);
+            border: none;
+            color: #121212;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .settings-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .settings-input {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 12px;
+            font-size: 1rem;
+            width: 100%;
+        }
+        
+        .log-item-pending {
+            opacity: 0.5;
+        }
+
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <header>
+        <h1>Smoke Control</h1>
+        <button class="settings-btn" id="openSettingsBtn">⚙️</button>
+    </header>
+
+    <div class="intervals-grid">
+        <div class="stat-box">
+            <div class="stat-label">Текущий интервал</div>
+            <div class="stat-value" id="currentInterval">-- мин</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Плановый интервал</div>
+            <div class="stat-value" id="planInterval">35 мин</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stats-list">
+            <div class="stat-row">
+                <span>Потрачено за текущий месяц:</span>
+                <span id="monthSpent">0 ₸ (0 пачек)</span>
+            </div>
+            <div class="stat-row">
+                <span>Потрачено за всё время:</span>
+                <span id="allTimeSpent">0 ₸ (0 пачек)</span>
+            </div>
+            <div class="stat-row">
+                <span>План на этот месяц:</span>
+                <span id="monthPlan">51 250 ₸ (41 пачка)</span>
+            </div>
+            <div class="stat-row">
+                <span>Прогноз по текущему темпу:</span>
+                <span id="projectedSpent">0 ₸ (0 пачек)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stat-label" style="margin-bottom: 8px;">История покупок (Облако)</div>
+        <div class="log-container" id="logContainer">
+            <div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 10px;">Загрузка...</div>
+        </div>
+    </div>
+
+    <div class="add-btn-container">
+        <button class="btn-primary" id="openAddModalBtn">Добавить</button>
+    </div>
+
+    <!-- Модальное окно добавления -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <div class="modal-title">Сколько пачек куплено?</div>
+            <div class="packs-grid" id="packsGrid">
+                <div class="pack-num-btn" data-val="1">1</div>
+                <div class="pack-num-btn" data-val="2">2</div>
+                <div class="pack-num-btn" data-val="3">3</div>
+                <div class="pack-num-btn" data-val="4">4</div>
+                <div class="pack-num-btn" data-val="5">5</div>
+                <div class="pack-num-btn" data-val="6">6</div>
+                <div class="pack-num-btn" data-val="7">7</div>
+                <div class="pack-num-btn" data-val="8">8</div>
+                <div class="pack-num-btn" data-val="9">9</div>
+                <div class="pack-num-btn" data-val="10">10</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="closeAddModalBtn">Отмена</button>
+                <button class="btn-approve" id="approveAddBtn" disabled>Апрув</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-title">Настройки</div>
+            <div class="settings-group">
+                <label class="settings-label" for="priceInput">Текущая цена за пачку (₸)</label>
+                <input type="number" id="priceInput" class="settings-input" value="1250">
+            </div>
+            <button class="btn-danger" id="resetDataBtn">Сбросить таблицу</button>
+            <div class="modal-actions" style="margin-top: 10px;">
+                <button class="btn-secondary" id="closeSettingsModalBtn">Закрыть</button>
+                <button class="btn-approve" id="saveSettingsBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://hldjwvfprjnjcvvbtmvt.supabase.co/rest/v1";
+        const SUPABASE_KEY = "sb_publishable_R4p7Bib0uUb7Dy5mg6fX1w_NN-fqJK2";
+        const SUPABASE_HEADERS = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+        };
+
+        const STICKS_PER_PACK = 20;
+        const WAKING_HOURS_PER_DAY = 16;
+        const WAKING_MINUTES_PER_DAY = WAKING_HOURS_PER_DAY * 60;
+        const PLAN_INTERVAL = 35;
+        const MONTH_BUDGET_TENGE = 51250;
+        const MONTH_PLAN_PACKS = 41;
+
+        let db = { purchases: [] };
+        let currentPrice = 1250;
+        let selectedPacks = null;
+
+        const currentIntervalEl = document.getElementById('currentInterval');
+        const monthSpentEl = document.getElementById('monthSpent');
+        const allTimeSpentEl = document.getElementById('allTimeSpent');
+        const monthPlanEl = document.getElementById('monthPlan');
+        const projectedSpentEl = document.getElementById('projectedSpent');
+        const logContainer = document.getElementById('logContainer');
+
+        const addModal = document.getElementById('addModal');
+        const settingsModal = document.getElementById('settingsModal');
+        const openAddModalBtn = document.getElementById('openAddModalBtn');
+        const closeAddModalBtn = document.getElementById('closeAddModalBtn');
+        const approveAddBtn = document.getElementById('approveAddBtn');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const resetDataBtn = document.getElementById('resetDataBtn');
+        const priceInput = document.getElementById('priceInput');
+        const packsGrid = document.getElementById('packsGrid');
+
+        async function loadData() {
+            try {
+                const cached = localStorage.getItem('smokeControlCache');
+                if (cached) {
+                    db.purchases = JSON.parse(cached);
+                    const savedPriceCached = localStorage.getItem('smokeControlPrice');
+                    if (savedPriceCached) currentPrice = parseFloat(savedPriceCached);
+                    updateUI();
+                }
+            } catch (e) { /* игнор, кэша нет — не критично */ }
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/purchases?select=*&order=date.asc`, {
+                    headers: SUPABASE_HEADERS
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const purchases = await response.json();
+                db.purchases = purchases;
+                try { localStorage.setItem('smokeControlCache', JSON.stringify(db.purchases)); } catch(e) {}
+
+                const savedPrice = localStorage.getItem('smokeControlPrice');
+                if (savedPrice) {
+                    currentPrice = parseFloat(savedPrice);
+                } else if (db.purchases.length > 0 && db.purchases[db.purchases.length - 1].price) {
+                    currentPrice = db.purchases[db.purchases.length - 1].price;
+                }
+                updateUI();
+            } catch (e) {
+                console.error(e);
+                if (db.purchases.length === 0) {
+                    logContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--danger); text-align: center; padding: 10px;">Ошибка связи с облаком</div>';
+                }
+            }
+        }
+
+        async function sendAction(actionData) {
+            document.body.classList.add('loading');
+            try {
+                if (actionData.action === "reset") {
+                    const response = await fetch(`${SUPABASE_URL}/purchases?id=gt.0`, {
+                        method: "DELETE",
+                        headers: SUPABASE_HEADERS
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    db.purchases = [];
+                    try { localStorage.setItem('smokeControlCache', JSON.stringify(db.purchases)); } catch(e) {}
+                    updateUI();
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Ошибка сохранения в облако!");
+            }
+            document.body.classList.remove('loading');
+        }
+
+        // Не блокирует интерфейс: локальное изменение уже применено (optimisticEntry в db.purchases),
+        // сеть синхронизируется в фоне. При ошибке — откатывает запись и сообщает алертом.
+        async function syncAction(actionData, optimisticEntry) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/purchases`, {
+                    method: "POST",
+                    headers: { ...SUPABASE_HEADERS, "Prefer": "return=representation" },
+                    body: JSON.stringify({ packs: actionData.packs, price: actionData.price })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const inserted = await response.json();
+                db.purchases = db.purchases.filter(p => p !== optimisticEntry);
+                db.purchases.push(inserted[0]);
+                db.purchases.sort((a, b) => new Date(a.date) - new Date(b.date));
+                try { localStorage.setItem('smokeControlCache', JSON.stringify(db.purchases)); } catch(e) {}
+                updateUI();
+            } catch (e) {
+                console.error(e);
+                db.purchases = db.purchases.filter(p => p !== optimisticEntry);
+                updateUI();
+                alert("Ошибка сохранения в облаке! Попробуй добавить ещё раз.");
+            }
+        }
+
+        function updateUI() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            let monthPacks = 0;
+            let monthCost = 0;
+            let allPacks = 0;
+            let allCost = 0;
+            let monthPurchases = [];
+
+            logContainer.innerHTML = '';
+            
+            if (db.purchases.length === 0) {
+                logContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 10px;">Нет записей</div>';
+            }
+
+            const sortedPurchasesDesc = [...db.purchases].reverse();
+
+            sortedPurchasesDesc.forEach(p => {
+                const pDate = new Date(p.date);
+                const price = p.price || currentPrice;
+                const cost = p.packs * price;
+                allPacks += Number(p.packs);
+                allCost += cost;
+
+                if (pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonth) {
+                    monthPacks += Number(p.packs);
+                    monthCost += cost;
+                    monthPurchases.push(pDate);
+                }
+
+                const dateStr = !isNaN(pDate.getTime()) ? pDate.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                const logItem = document.createElement('div');
+                logItem.className = 'log-item' + (p._pending ? ' log-item-pending' : '');
+                logItem.innerHTML = `
+                    <span>${dateStr}</span>
+                    <span class="log-item-info">${p.packs} пач. / ${cost.toLocaleString('ru-RU')} ₸${p._pending ? ' ⏳' : ''}</span>
+                `;
+                logContainer.appendChild(logItem);
+            });
+
+            let currentInterval = PLAN_INTERVAL;
+            if (monthPacks > 0 && monthPurchases.length > 0) {
+                monthPurchases.sort((a, b) => a - b);
+                const firstPurchaseDate = monthPurchases[0];
+                const diffTime = Math.abs(now - firstPurchaseDate);
+                const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                
+                const totalSticksMonth = monthPacks * STICKS_PER_PACK;
+                const totalMinutesAvailable = diffDays * WAKING_MINUTES_PER_DAY;
+                currentInterval = Math.round(totalMinutesAvailable / totalSticksMonth);
+            }
+            currentIntervalEl.textContent = `${currentInterval} мин`;
+
+            monthSpentEl.textContent = `${monthCost.toLocaleString('ru-RU')} ₸ (${monthPacks} пачек)`;
+            allTimeSpentEl.textContent = `${allCost.toLocaleString('ru-RU')} ₸ (${allPacks} пачек)`;
+            monthPlanEl.textContent = `${MONTH_BUDGET_TENGE.toLocaleString('ru-RU')} ₸ (${MONTH_PLAN_PACKS} пачка)`;
+
+            let projectedCost = monthCost;
+            if (monthPacks > 0 && monthPurchases.length > 0) {
+                const firstPurchaseDate = monthPurchases[0];
+                const diffTime = Math.abs(now - firstPurchaseDate);
+                const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+                const avgPacksPerDay = monthPacks / diffDays;
+                const projectedTotalPacks = Math.ceil(avgPacksPerDay * daysInMonth);
+                projectedCost = projectedTotalPacks * currentPrice;
+                projectedSpentEl.textContent = `${projectedCost.toLocaleString('ru-RU')} ₸ (${projectedTotalPacks} пачек)`;
+            } else {
+                projectedSpentEl.textContent = `0 ₸ (0 пачек)`;
+            }
+        }
+
+        openAddModalBtn.addEventListener('click', () => {
+            selectedPacks = null;
+            approveAddBtn.disabled = true;
+            document.querySelectorAll('.pack-num-btn').forEach(b => b.classList.remove('selected'));
+            addModal.classList.add('active');
+        });
+
+        closeAddModalBtn.addEventListener('click', () => {
+            addModal.classList.remove('active');
+        });
+
+        packsGrid.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pack-num-btn')) {
+                document.querySelectorAll('.pack-num-btn').forEach(b => b.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedPacks = parseInt(e.target.getAttribute('data-val'));
+                approveAddBtn.disabled = false;
+            }
+        });
+
+        approveAddBtn.addEventListener('click', () => {
+            if (!selectedPacks) return;
+            const optimisticEntry = {
+                date: new Date().toISOString(),
+                packs: selectedPacks,
+                price: currentPrice,
+                _pending: true
+            };
+            db.purchases.push(optimisticEntry);
+            db.purchases.sort((a, b) => new Date(a.date) - new Date(b.date));
+            updateUI();
+            addModal.classList.remove('active');
+
+            syncAction({
+                action: "add",
+                packs: selectedPacks,
+                price: currentPrice
+            }, optimisticEntry);
+        });
+
+        openSettingsBtn.addEventListener('click', () => {
+            priceInput.value = currentPrice;
+            settingsModal.classList.add('active');
+        });
+
+        closeSettingsModalBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            const newPrice = parseFloat(priceInput.value);
+            if (!isNaN(newPrice) && newPrice > 0) {
+                currentPrice = newPrice;
+                localStorage.setItem('smokeControlPrice', newPrice);
+                updateUI();
+            }
+            settingsModal.classList.remove('active');
+        });
+
+        resetDataBtn.addEventListener('click', () => {
+            if (confirm('Точно очистить всю таблицу в облаке?')) {
+                sendAction({ action: "reset" });
+                settingsModal.classList.remove('active');
+            }
+        });
+
+        loadData();
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(e => console.error('SW error:', e));
+            });
+        }
+    </script>
+</body>
+</html>
